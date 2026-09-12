@@ -3,7 +3,7 @@
 Google Play 등록에 필요한 개인정보처리방침 페이지다.
 **외부 리소스가 하나도 없는 단일 HTML** 이라 GitHub Pages 에 그대로 올라간다.
 
-- 공개 주소: `https://<깃허브아이디>.github.io/gongsu-privacy/`
+- 공개 주소: https://loadguess-cyber.github.io/gongsu-privacy/
 - 앱: 공수뚝딱 (`com.iroir.gongsu`) — 근로자 본인용 공수·급여 기록
 - 문의: loadguess@gmail.com
 
