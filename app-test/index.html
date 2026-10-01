@@ -93,7 +93,7 @@
   .btn.block{width:100%;} .btn.sm{padding:8px 12px;font-size:12.5px;border-radius:11px;}
 
   label{display:block;font-size:12.5px;font-weight:700;color:var(--gray);margin:14px 0 6px;}
-  input[type=text],input[type=number],input[type=date],select,textarea{
+  input[type=text],input[type=number],input[type=date],input[type=tel],select,textarea{
     width:100%;padding:13px 14px;border:1.5px solid var(--line2);border-radius:13px;font-size:15px;
     background:#fff;color:var(--ink);font-family:inherit;
   }
@@ -301,6 +301,13 @@
   nav button .ic svg .dot{fill:currentColor;stroke:none;}
   nav button.active{color:var(--blue);}
   .logo .logomark{border-radius:8px;display:block;}
+  /* 오른쪽 위 계정 — 연결 전 카카오 로고, 로그인 후 프로필, 연결되면 회사 이름까지 (연동 켤 때만 보임) */
+  .hdr-acct button{border:none;background:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;}
+  .acct-kakao{width:34px;height:34px;border-radius:50%;background:#FEE500;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .acct-pic{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--blue-tint);color:var(--blue);font-weight:800;font-size:15px;
+    display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex:none;}
+  .acct-org{font-size:12.5px;font-weight:800;color:var(--blue);background:var(--blue-tint);border-radius:999px;padding:5px 10px;
+    max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   .toast{
     position:fixed;left:50%;bottom:100px;transform:translateX(-50%);
@@ -419,6 +426,7 @@
         </svg>
         공수뚝딱
       </div>
+      <div id="hdrAcct" class="hdr-acct"></div>
     </div>
     <div class="month-row" id="monthRow">
       <div class="month-big"><span id="mLabel"></span></div>
@@ -501,7 +509,7 @@
    - ★ parity.js 가 소스 글자로 비교하는 7개 함수(computeMonth·calcAllowances·rateOf·
      baseHourly·mealFor·dim·num) 근처에는 두지 않는다. 여기(맨 위)가 제일 안전하다.
    - ★ 급여뚝딱 정본과 같은 모양이다(공유노트 18-1). 주입 코드를 그대로 쓰려고 맞췄다. */
-const APP_BUILD='2026-10-01.web-test2 · 8bb935c · web-test';
+const APP_BUILD='2026-10-02.web-test · 859279b · web-test';
 
 /* ========== 저장 ========== */
 const CORE_KEY='core-v2';
@@ -1073,6 +1081,7 @@ async function render(){
   else if(state.tab==='docs')main.innerHTML=vDocs();
   else main.innerHTML=vManage();
   syncAd();
+  renderHdrAcct();
 }
 
 /* ========== 대한민국 공휴일 ==========
@@ -3435,12 +3444,12 @@ async function syncAfterLogin(){
   }
   /* 방금 카카오 로그인을 마치고 돌아온 경우: 초대코드 칸이 있는 설정 화면으로 데려간다.
      (웹은 돌아오면서 페이지가 새로 열려 달력 화면이 떠서, 코드 넣는 곳을 못 찾았다 — 10-01 아이폰 실측) */
+  renderHdrAcct();
   if(SYNC.fresh){
     SYNC.fresh=false;
     if(!c.orgId){
       if(modalOpen())closeModal();
-      state.tab='manage';render();
-      try{window.scrollTo(0,document.body.scrollHeight);}catch(_){}
+      openAcct();   // 초대코드·전화번호 입력창이 있는 '내 계정' 시트
       toastMsg('로그인됐어요 — 사장님께 받은 초대코드를 넣어주세요');
       return;
     }
@@ -3451,6 +3460,7 @@ function syncAfterLogout(){
   if(SYNC.bmChan&&SB){try{SB.removeChannel(SYNC.bmChan);}catch(_){}}SYNC.bmChan=null;
   SYNC.org=null;SYNC.queue=[];SYNC.sent={};
   DB.settings.sync=Object.assign({},syncCfg(),{on:false});saveCore();
+  renderHdrAcct();
   if(!modalOpen())render();
 }
 function syncResume(){syncFlush();bmFetch();}
@@ -3479,29 +3489,85 @@ function syncJoinErrMsg(e){
   if(e==='plan_limit') return '사장님 팀이 꽉 찼어요. 사장님께 인원 추가를 요청해주세요';
   return '초대코드를 찾을 수 없어요';
 }
+/* 전화번호는 근로자가 직접 넣는다(2026-10-02 사용자 결정). 사장님 급여뚝딱이 직원 전화번호와 맞춰
+   카카오 닉네임 대신 '사장님이 등록한 이름·정보'로 보여 준다. 숫자만 보낸다. */
+function phoneDigits(s){return String(s||'').replace(/[^0-9]/g,'');}
+function fmtPhone(s){const d=phoneDigits(s);return d.length===11?d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'):d.length===10?d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3'):d;}
 async function syncJoin(){
   const code=String((document.getElementById('sy_code')||{}).value||'').trim().toUpperCase();
   if(code.length<4){toastMsg('초대코드를 입력해주세요');return;}
+  const phone=phoneDigits((document.getElementById('sy_phone')||{}).value);
+  if(!/^01\d{8,9}$/.test(phone)){toastMsg('전화번호를 정확히 넣어주세요 (예: 010-1234-5678)');return;}
   const sb=await ensureSB();if(!sb)return;
   if(!SYNC.user){toastMsg('먼저 로그인해주세요');return;}
-  const r=await sb.rpc('join_org',{p_code:code,p_name:syncDisplayName()});
+  const r=await sb.rpc('join_org',{p_code:code,p_name:syncDisplayName(),p_phone:phone});
   if(r.error){toastMsg('연결 실패: '+r.error.message);return;}
   const data=r.data||{};
   if(!data.ok){toastMsg(syncJoinErrMsg(data.error));return;}
-  DB.settings.sync={on:true,orgId:data.org_id,orgName:data.org_name||''};
+  const since=todayYMD();
+  DB.settings.sync={on:true,orgId:data.org_id,orgName:data.org_name||'',phone,since};
+  /* 회사가 바뀌면 급여를 회사별로 나눠 보여 주기 위한 재직 기록 (연결한 날 ~ 퇴사한 날) */
+  const H=Array.isArray(DB.settings.syncHistory)?DB.settings.syncHistory:(DB.settings.syncHistory=[]);
+  if(!H.some(h=>h.orgId===data.org_id&&!h.to))H.push({orgId:data.org_id,orgName:data.org_name||'',from:since,to:null});
   await saveCore();
   SYNC.org={id:data.org_id,name:data.org_name||''};
   SYNC.sent={};SYNC.queue=[];await syncSaveState();
   syncScanAll();syncFlush();slipFetch(true);bmFetch(true);bmSubscribe();
+  if(modalOpen())closeModal();
   toastMsg((data.org_name||'팀')+'에 연결됐어요');
   render();
 }
 async function syncLeave(){
-  if(!confirm('사장님과 연결을 끊을까요? 이 폰의 기록은 그대로 남아요.'))return;
+  const c=syncCfg();
+  if(!confirm((c.orgName||'회사')+'에서 퇴사할까요?\n사장님과 연결이 끊기고, 이 폰의 공수·급여 기록은 그대로 남아 혼자 계속 쓸 수 있어요.'))return;
   if(SB&&SYNC.user&&SYNC.org){try{await SB.from('members').delete().match({org_id:SYNC.org.id,user_uid:SYNC.user.id});}catch(_){}}
-  DB.settings.sync={on:false};await saveCore();
+  const H=Array.isArray(DB.settings.syncHistory)?DB.settings.syncHistory:[];
+  const open=H.find(h=>h.orgId===c.orgId&&!h.to);if(open)open.to=todayYMD();
+  DB.settings.sync={on:false,phone:c.phone||''};await saveCore();
   SYNC.org=null;SYNC.queue=[];SYNC.sent={};await syncSaveState();
-  toastMsg('연결을 끊었어요');render();
+  if(modalOpen())closeModal();
+  toastMsg('퇴사 처리했어요 — 이제 혼자 기록으로 이어서 써요');render();
+}
+/* ----- 오른쪽 위 계정 버튼 ----- */
+const KAKAO_SVG='<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3.5C6.75 3.5 2.5 6.86 2.5 11c0 2.67 1.77 5.01 4.43 6.34l-.9 3.27c-.08.29.25.52.5.36l3.9-2.58c.51.07 1.03.11 1.57.11 5.25 0 9.5-3.36 9.5-7.5S17.25 3.5 12 3.5z"/></svg>';
+function acctAvatarHTML(){
+  const m=(SYNC.user&&SYNC.user.user_metadata)||{};
+  const pic=m.avatar_url||m.picture||'';
+  if(pic)return `<img class="acct-pic" src="${esc(pic)}" alt="" referrerpolicy="no-referrer">`;
+  return `<span class="acct-pic">${esc((syncUserName()||'나').slice(0,1))}</span>`;
+}
+function renderHdrAcct(){
+  const el=document.getElementById('hdrAcct');if(!el)return;
+  if(!SYNC_ENABLED){el.innerHTML='';return;}
+  if(!SYNC.user){el.innerHTML=`<button data-act="syncLogin" aria-label="카카오로 사장님과 연결"><span class="acct-kakao">${KAKAO_SVG}</span></button>`;return;}
+  const c=syncCfg();
+  el.innerHTML=`<button data-act="openAcct" aria-label="내 계정">${c.orgId?`<span class="acct-org">${esc(c.orgName||'팀')}</span>`:''}${acctAvatarHTML()}</button>`;
+}
+function openAcct(){
+  if(!SYNC.user){syncLogin();return;}
+  const c=syncCfg();
+  const head=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">${acctAvatarHTML()}
+      <div><div style="font-weight:800;">${esc(syncUserName()||'카카오 계정')}</div><div class="small muted">카카오로 로그인됨</div></div></div>`;
+  const body=!c.orgId
+    ? `<label>초대코드</label>
+       <input type="text" id="sy_code" placeholder="예: AB12CD" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;">
+       <label style="margin-top:10px;display:block;">내 전화번호</label>
+       <input type="tel" id="sy_phone" placeholder="010-1234-5678" inputmode="tel" value="${esc(fmtPhone(c.phone||''))}">
+       <div class="hint">사장님이 급여뚝딱에 등록한 내 번호와 같아야 사장님 화면에 내 이름이 바로 나와요. 사장님 외에는 보이지 않아요.</div>
+       <button class="btn block" style="margin-top:10px;" data-act="syncJoin">연결하기</button>
+       <div class="hint">초대코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요.</div>`
+    : `<div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')}</div>
+         <div class="meta">${c.since?esc(c.since)+'부터 ':''}다니는 중${c.phone?' · '+esc(fmtPhone(c.phone)):''}</div></div></div>
+       <button class="btn danger block" style="margin-top:12px;" data-act="syncLeave">퇴사하기</button>
+       <div class="hint">퇴사하면 사장님과 연결만 끊기고, 이 폰의 공수·급여 기록은 그대로 남아 혼자 계속 쓸 수 있어요.</div>`;
+  openModal('내 계정',head+body+`
+    <button class="btn gray block sm" style="margin-top:16px;" data-act="acctLogout">로그아웃</button>
+    <button class="btn ghost block sm" style="margin-top:6px;" data-act="syncDeleteAccount">계정 삭제</button>`);
+}
+async function acctLogout(){
+  if(!confirm('로그아웃할까요? 이 폰의 기록은 그대로 남아요.'))return;
+  if(modalOpen())closeModal();
+  await syncLogout();
 }
 /* 설정에서 이름을 바꾸면 사장님 화면의 이름도 따라간다 */
 function syncNameChanged(){
@@ -4006,15 +4072,17 @@ function vSyncCard(){
   if(!c.orgId)return `<div class="card"><div class="card-title">사장님과 연결 <button class="btn sm ghost" data-act="syncLogout">로그아웃</button></div>
       <div class="small muted" style="margin-bottom:6px;">${esc(syncUserName())} 로 로그인됨</div>
       <label>초대코드</label>
-      <div class="row"><input type="text" id="sy_code" placeholder="예: AB12CD" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;"><button class="btn" style="flex:0 0 auto;" data-act="syncJoin">연결</button></div>
-      <div class="hint">코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요.</div>
+      <input type="text" id="sy_code" placeholder="예: AB12CD" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;">
+      <label style="margin-top:8px;display:block;">내 전화번호</label>
+      <div class="row"><input type="tel" id="sy_phone" placeholder="010-1234-5678" inputmode="tel" value="${esc(fmtPhone(c.phone||''))}"><button class="btn" style="flex:0 0 auto;" data-act="syncJoin">연결</button></div>
+      <div class="hint">코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요. 전화번호는 사장님이 등록한 내 번호와 같아야 해요.</div>
       <div class="hint">폰을 바꿨거나 토스·안드로이드 앱을 오갔다면 예전 연결은 이어지지 않아요. 사장님께 초대코드를 다시 받아 넣어주세요.</div>
       <button class="btn danger block sm" style="margin-top:12px;" data-act="syncDeleteAccount">계정 삭제</button></div>`;
   const n=SYNC.queue.length;
   return `<div class="card"><div class="card-title">사장님과 연결 <span class="tag blue">연결됨</span> <button class="btn sm ghost" data-act="syncLogout">로그아웃</button></div>
       <div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')}</div>
         <div class="meta">${n?'전송 대기 '+n+'건':'모두 전송됨'} · 사장님 화면 이름: ${esc(syncDisplayName())}</div></div>
-        <button class="btn ghost sm" data-act="syncLeave">연결 끊기</button></div>
+        <button class="btn ghost sm" data-act="syncLeave">퇴사하기</button></div>
       <div class="hint">근무·휴무·연차, 현장, 연장·야간 시간, 출퇴근 시각만 보내요. 단가와 급여는 이 폰에만 있어요.</div>
       <button class="btn danger block sm" style="margin-top:12px;" data-act="syncDeleteAccount">계정 삭제</button>
       <div class="hint">계정을 지우면 서버에 있는 <b>내 소속과 출결 신고가 모두</b> 사라져요.
