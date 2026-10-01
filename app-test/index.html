@@ -214,6 +214,7 @@
   .nm{font-weight:800;}
   .tag{display:inline-block;font-size:10px;background:var(--line);color:var(--ink2);border-radius:6px;padding:2px 7px;margin-left:5px;font-weight:700;}
   .tag.blue{background:var(--blue-tint);color:var(--blue);}
+  .tag.green{background:#E7F8EF;color:#0E9F5B;}
 
   .taxbadge{font-size:10px;font-weight:800;border-radius:6px;padding:2px 6px;margin-left:4px;}
   .taxbadge.f{background:#FFF4E5;color:#D97B0B;}
@@ -306,8 +307,11 @@
   .acct-kakao{width:34px;height:34px;border-radius:50%;background:#FEE500;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.12);}
   .acct-pic{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--blue-tint);color:var(--blue);font-weight:800;font-size:15px;
     display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex:none;}
-  .acct-org{font-size:12.5px;font-weight:800;color:var(--blue);background:var(--blue-tint);border-radius:999px;padding:5px 10px;
-    max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* 연결되면 초록 — 급여뚝딱 직원 목록의 '공수뚝딱 연결됨' 초록 점과 같은 뜻(10-02 사용자: 두 앱 같이) */
+  .acct-org{font-size:12.5px;font-weight:800;color:#0E9F5B;background:#E7F8EF;border-radius:999px;padding:5px 10px 5px 8px;
+    max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  .acct-org::before,.dot-ok::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);flex:none;display:inline-block;}
+  .dot-ok{display:inline-flex;align-items:center;gap:5px;color:#0E9F5B;font-weight:700;}
 
   .toast{
     position:fixed;left:50%;bottom:100px;transform:translateX(-50%);
@@ -509,7 +513,7 @@
    - ★ parity.js 가 소스 글자로 비교하는 7개 함수(computeMonth·calcAllowances·rateOf·
      baseHourly·mealFor·dim·num) 근처에는 두지 않는다. 여기(맨 위)가 제일 안전하다.
    - ★ 급여뚝딱 정본과 같은 모양이다(공유노트 18-1). 주입 코드를 그대로 쓰려고 맞췄다. */
-const APP_BUILD='2026-10-02.web-test · 859279b · web-test';
+const APP_BUILD='2026-10-02.web-test · 8491457 · web-test';
 
 /* ========== 저장 ========== */
 const CORE_KEY='core-v2';
@@ -3556,7 +3560,7 @@ function openAcct(){
        <div class="hint">사장님이 급여뚝딱에 등록한 내 번호와 같아야 사장님 화면에 내 이름이 바로 나와요. 사장님 외에는 보이지 않아요.</div>
        <button class="btn block" style="margin-top:10px;" data-act="syncJoin">연결하기</button>
        <div class="hint">초대코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요.</div>`
-    : `<div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')}</div>
+    : `<div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')} <span class="dot-ok small">연결됨</span></div>
          <div class="meta">${c.since?esc(c.since)+'부터 ':''}다니는 중${c.phone?' · '+esc(fmtPhone(c.phone)):''}</div></div></div>
        <button class="btn danger block" style="margin-top:12px;" data-act="syncLeave">퇴사하기</button>
        <div class="hint">퇴사하면 사장님과 연결만 끊기고, 이 폰의 공수·급여 기록은 그대로 남아 혼자 계속 쓸 수 있어요.</div>`;
@@ -4079,7 +4083,7 @@ function vSyncCard(){
       <div class="hint">폰을 바꿨거나 토스·안드로이드 앱을 오갔다면 예전 연결은 이어지지 않아요. 사장님께 초대코드를 다시 받아 넣어주세요.</div>
       <button class="btn danger block sm" style="margin-top:12px;" data-act="syncDeleteAccount">계정 삭제</button></div>`;
   const n=SYNC.queue.length;
-  return `<div class="card"><div class="card-title">사장님과 연결 <span class="tag blue">연결됨</span> <button class="btn sm ghost" data-act="syncLogout">로그아웃</button></div>
+  return `<div class="card"><div class="card-title">사장님과 연결 <span class="tag green">● ${esc(c.orgName||'팀')} 연결됨</span> <button class="btn sm ghost" data-act="syncLogout">로그아웃</button></div>
       <div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')}</div>
         <div class="meta">${n?'전송 대기 '+n+'건':'모두 전송됨'} · 사장님 화면 이름: ${esc(syncDisplayName())}</div></div>
         <button class="btn ghost sm" data-act="syncLeave">퇴사하기</button></div>
