@@ -501,7 +501,7 @@
    - ★ parity.js 가 소스 글자로 비교하는 7개 함수(computeMonth·calcAllowances·rateOf·
      baseHourly·mealFor·dim·num) 근처에는 두지 않는다. 여기(맨 위)가 제일 안전하다.
    - ★ 급여뚝딱 정본과 같은 모양이다(공유노트 18-1). 주입 코드를 그대로 쓰려고 맞췄다. */
-const APP_BUILD='2026-10-01.web-test · 2b3dbfc · web-test';
+const APP_BUILD='2026-10-01.web-test2 · 8bb935c · web-test';
 
 /* ========== 저장 ========== */
 const CORE_KEY='core-v2';
@@ -3285,6 +3285,7 @@ async function syncBoot(){
   }
   try{window.addEventListener('online',()=>syncResume());}catch(_){}
   let fromOAuth=false;try{fromOAuth=/[?&#](code|access_token|error)=/.test(location.href);}catch(_){}
+  if(fromOAuth)SYNC.fresh=true;
   if(!syncOn()&&!syncHasSession()&&!fromOAuth)return;
   await ensureSB();
 }
@@ -3303,9 +3304,9 @@ function syncHandleDeepLink(url){
   if(code)ensureSB().then(sb=>{
     if(!sb){toastMsg('로그인 모듈을 불러오지 못했어요');return;}
     toastMsg('로그인 확인 중…');
+    SYNC.fresh=true;   // 성공하면 syncAfterLogin 이 초대코드 화면으로 데려간다
     return sb.auth.exchangeCodeForSession(code).then(r=>{
-      if(r.error){toastMsg('로그인 실패: '+r.error.message);return;}
-      toastMsg('로그인됐어요 — 사장님께 받은 초대코드를 넣어주세요');
+      if(r.error){SYNC.fresh=false;toastMsg('로그인 실패: '+r.error.message);}
     });
   }).catch(e=>toastMsg('로그인 실패: '+((e&&e.message)||e)));
   return true;
@@ -3431,6 +3432,18 @@ async function syncAfterLogin(){
     syncFlush();
     slipFetch();   // 새 명세서가 왔으면 알린다
     bmFetch(true);bmSubscribe();   // 사장님 달력 (20절)
+  }
+  /* 방금 카카오 로그인을 마치고 돌아온 경우: 초대코드 칸이 있는 설정 화면으로 데려간다.
+     (웹은 돌아오면서 페이지가 새로 열려 달력 화면이 떠서, 코드 넣는 곳을 못 찾았다 — 10-01 아이폰 실측) */
+  if(SYNC.fresh){
+    SYNC.fresh=false;
+    if(!c.orgId){
+      if(modalOpen())closeModal();
+      state.tab='manage';render();
+      try{window.scrollTo(0,document.body.scrollHeight);}catch(_){}
+      toastMsg('로그인됐어요 — 사장님께 받은 초대코드를 넣어주세요');
+      return;
+    }
   }
   if(state.tab==='manage'&&!modalOpen())render();
 }
@@ -4190,7 +4203,7 @@ function hideSplash(){
   /* ---------- 1) 서비스워커 ---------- */
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
-      /* 연결 테스트판: 서비스워커 끔 (정식 /app/ 캐시와 같은 출처라 엉키지 않게) */
+      /* 연결 테스트판: 서비스워커 끔 */
     });
   }
 
