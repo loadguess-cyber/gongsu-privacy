@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>앱으로 돌아가기</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:"Pretendard","Apple SD Gothic Neo",-apple-system,"Malgun Gothic",sans-serif;
+    background:linear-gradient(160deg,#5AA3FF,#3182F6 45%,#1B64DA);color:#fff;text-align:center;padding:24px;box-sizing:border-box}
+  .box{max-width:360px;width:100%}
+  h1{font-size:22px;margin:0 0 8px}
+  p{font-size:14.5px;line-height:1.6;opacity:.9;margin:0 0 22px}
+  a.btn{display:block;background:#fff;color:#1B64DA;font-weight:800;font-size:17px;text-decoration:none;
+    padding:16px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+  .err{background:rgba(0,0,0,.18);border-radius:12px;padding:12px;font-size:13.5px;margin-bottom:18px}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1 id="t">로그인했어요</h1>
+  <p id="m">아래 버튼을 눌러 앱으로 돌아가세요.</p>
+  <div id="e" class="err" hidden></div>
+  <a id="go" class="btn" href="#">앱으로 돌아가기</a>
+</div>
+<script>
+/* 카카오 로그인(Supabase) 이 끝나면 여기로 온다. 앱 주소(com.iroir.xxx://auth/callback)로 바로 보내면
+   카카오가 자동 승인한 경우(사람이 아무것도 안 누름) 크롬이 앱 열기를 막는다 → 앱이 코드를 못 받는다.
+   그래서 사람이 버튼을 한 번 누르게 해서 앱으로 넘긴다. 자동 이동도 한 번 시도는 한다. */
+(function(){
+  var q=new URLSearchParams(location.search);
+  var app=q.get('app')==='paypop'?'paypop':'gongsu';
+  q.delete('app');
+  var name=app==='paypop'?'급여뚝딱':'공수뚝딱';
+  var url='com.iroir.'+app+'://auth/callback?'+q.toString();
+  var go=document.getElementById('go');
+  go.href=url;go.textContent=name+'으로 돌아가기';
+  var err=q.get('error_description')||q.get('error');
+  if(err){
+    document.getElementById('t').textContent='로그인하지 못했어요';
+    document.getElementById('m').textContent='버튼을 눌러 앱으로 돌아가 다시 시도해 주세요.';
+    var e=document.getElementById('e');e.hidden=false;e.textContent=err;
+  }else if(q.get('code')){
+    setTimeout(function(){location.href=url;},300);
+  }
+})();
+</script>
+</body>
+</html>
