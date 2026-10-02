@@ -513,7 +513,7 @@
    - ★ parity.js 가 소스 글자로 비교하는 7개 함수(computeMonth·calcAllowances·rateOf·
      baseHourly·mealFor·dim·num) 근처에는 두지 않는다. 여기(맨 위)가 제일 안전하다.
    - ★ 급여뚝딱 정본과 같은 모양이다(공유노트 18-1). 주입 코드를 그대로 쓰려고 맞췄다. */
-const APP_BUILD='2026-10-02.web-test · 8491457 · web-test';
+const APP_BUILD='2026-10-02.web-test · 3bc3b0e · web-test';
 
 /* ========== 저장 ========== */
 const CORE_KEY='core-v2';
@@ -3578,13 +3578,15 @@ function syncNameChanged(){
   if(!SB||!SYNC.user||!SYNC.org||!syncOn())return;
   SB.from('members').update({display_name:syncDisplayName()}).match({org_id:SYNC.org.id,user_uid:SYNC.user.id}).then(()=>{},()=>{});
 }
-/* 출결 항목 → 서버에 보낼 신고. 단가(r)·건당 항목(items)은 보내지 않는다. */
+/* 출결 항목 → 서버에 보낼 신고. 단가(r)·건당 항목(items)은 보내지 않는다.
+   ★ 출퇴근 시각은 보내지 않는다(2026-10-02 사용자: "그날 출근 여부만 알면 된다").
+     null 로 보내서 예전에 올라간 시각도 다음 전송 때 서버에서 지워진다. */
 function syncPayload(en,ymd){
   const k=kindOf(en);
   return {ymd,kind:k,gongsu:Number(en.g)||0,site:String(en.c||''),
     paid:k==='leave'?(en.p!==false):null,
     ot:Number(en.ot)||null,nt:Number(en.nt)||null,
-    clock_in:en.in||null,clock_out:en.out||null};
+    clock_in:null,clock_out:null};
 }
 function syncScanLater(mk){
   if(!syncOn()||!SYNC.org)return;
@@ -4087,7 +4089,7 @@ function vSyncCard(){
       <div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')}</div>
         <div class="meta">${n?'전송 대기 '+n+'건':'모두 전송됨'} · 사장님 화면 이름: ${esc(syncDisplayName())}</div></div>
         <button class="btn ghost sm" data-act="syncLeave">퇴사하기</button></div>
-      <div class="hint">근무·휴무·연차, 현장, 연장·야간 시간, 출퇴근 시각만 보내요. 단가와 급여는 이 폰에만 있어요.</div>
+      <div class="hint">날짜별 근무·휴무·연차, 현장, 연장·야간 시간만 보내요. 미리 넣은 휴무도 바로 전달돼요. 단가와 급여는 이 폰에만 있어요.</div>
       <button class="btn danger block sm" style="margin-top:12px;" data-act="syncDeleteAccount">계정 삭제</button>
       <div class="hint">계정을 지우면 서버에 있는 <b>내 소속과 출결 신고가 모두</b> 사라져요.
         <b>이 폰의 공수·급여 기록은 그대로 남습니다.</b></div></div>`;
