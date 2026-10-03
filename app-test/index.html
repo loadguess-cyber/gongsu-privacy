@@ -513,7 +513,7 @@
    - ★ parity.js 가 소스 글자로 비교하는 7개 함수(computeMonth·calcAllowances·rateOf·
      baseHourly·mealFor·dim·num) 근처에는 두지 않는다. 여기(맨 위)가 제일 안전하다.
    - ★ 급여뚝딱 정본과 같은 모양이다(공유노트 18-1). 주입 코드를 그대로 쓰려고 맞췄다. */
-const APP_BUILD='2026-10-02.web-test · 3bc3b0e · web-test';
+const APP_BUILD='2026-10-03.web-test · 9557e2b · web-test';
 
 /* ========== 저장 ========== */
 const CORE_KEY='core-v2';
@@ -602,7 +602,8 @@ function migrate(){
     DB.settings._ownerFlagged=true;
   }
   if(!DB.settings.insurance)DB.settings.insurance={pension:4.5,health:3.545,careRate:12.95,employment:0.9};
-  if(!DB.settings.taxRate)DB.settings.taxRate=0.033;
+  // 0%(세금 안 뗌)도 사용자가 고른 값이다. 예전엔 !taxRate 라서 0 이 켤 때마다 3.3% 로 돌아갔다(2026-10-03).
+  if(!DB.settings.taxRate&&DB.settings.taxRate!==0)DB.settings.taxRate=0.033;
   if(!DB.settings.payDay)DB.settings.payDay=25;
   // 사업 유형. 기본은 '급여가 지출'(대부분의 회사).
   // 인력공급처럼 급여를 현장에 청구하는 경우만 관리 탭에서 '급여가 매출'로 켠다.
@@ -3002,12 +3003,17 @@ async function saveSettings(){
   // retirementRate 는 일부러 뺐다 — 퇴직금은 동결하지 않고 전체 기간에 지금 값을 적용한다
   const CALC=['taxRate','insurance','employerIns','stdDayHours','stdMonthHours'];
   const old={};CALC.forEach(k=>{old[k]=JSON.parse(JSON.stringify(pickCfg(DB.settings[k],null)));});
-  DB.settings.bizName=document.getElementById('s_name').value;
-  DB.settings.bizNumber=document.getElementById('s_num').value;
-  DB.settings.ownerName=document.getElementById('s_own').value;
-  DB.settings.bizAddress=document.getElementById('s_addr').value;
-  DB.settings.bizEmail=document.getElementById('s_email').value.trim();
-  DB.settings.payDay=Number(document.getElementById('s_pay').value)||25;
+  /* 사업자 정보·사업주 부담 칸은 급여뚝딱에만 있다. 공수뚝딱 화면에는 없어서 예전엔 여기서 오류로 멈춰
+     세금·4대보험 요율이 하나도 저장되지 않았다(2026-10-03 발견). 화면에 있는 칸만 읽고, 없는 값은 그대로 둔다. */
+  const g=id=>document.getElementById(id);
+  if(g('s_name')){
+    DB.settings.bizName=g('s_name').value;
+    DB.settings.bizNumber=g('s_num').value;
+    DB.settings.ownerName=g('s_own').value;
+    DB.settings.bizAddress=g('s_addr').value;
+    DB.settings.bizEmail=g('s_email').value.trim();
+    DB.settings.payDay=Number(g('s_pay').value)||25;
+  }
   // 0% 도 설정할 수 있어야 한다. 빈칸일 때만 3.3 으로 되돌린다.
   const taxIn=document.getElementById('s_tax').value.trim();
   DB.settings.taxRate=(taxIn===''?3.3:Math.max(0,Number(taxIn)||0))/100;
@@ -3020,15 +3026,17 @@ async function saveSettings(){
   DB.settings.minWage=Number(document.getElementById('s_minw').value)||0;
   DB.settings.stdDayHours=Number(document.getElementById('s_dayh').value)||8;
   DB.settings.stdMonthHours=Number(document.getElementById('s_monh').value)||209;
-  DB.settings.employerIns={
-    pension:Number(document.getElementById('e_pen').value)||0,
-    health:Number(document.getElementById('e_hea').value)||0,
-    careRate:Number(document.getElementById('e_car').value)||0,
-    employment:Number(document.getElementById('e_emp').value)||0,
-    accident:Number(document.getElementById('e_acc').value)||0
-  };
-  DB.settings.retirementRate=Math.max(0,Number(document.getElementById('e_ret').value)||0);
-  DB.settings.showEmployerCost=document.getElementById('s_showEmp').checked;
+  if(g('e_pen')){
+    DB.settings.employerIns={
+      pension:Number(g('e_pen').value)||0,
+      health:Number(g('e_hea').value)||0,
+      careRate:Number(g('e_car').value)||0,
+      employment:Number(g('e_emp').value)||0,
+      accident:Number(g('e_acc').value)||0
+    };
+    DB.settings.retirementRate=Math.max(0,Number(g('e_ret').value)||0);
+  }
+  if(g('s_showEmp'))DB.settings.showEmployerCost=g('s_showEmp').checked;
   const changed=CALC.some(k=>JSON.stringify(old[k])!==JSON.stringify(pickCfg(DB.settings[k],null)));
   await saveCore();
   if(changed){
@@ -3557,7 +3565,7 @@ function openAcct(){
        <input type="text" id="sy_code" placeholder="예: AB12CD" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;">
        <label style="margin-top:10px;display:block;">내 전화번호</label>
        <input type="tel" id="sy_phone" placeholder="010-1234-5678" inputmode="tel" value="${esc(fmtPhone(c.phone||''))}">
-       <div class="hint">사장님이 급여뚝딱에 등록한 내 번호와 같아야 사장님 화면에 내 이름이 바로 나와요. 사장님 외에는 보이지 않아요.</div>
+       <div class="hint">사장님이 급여뚝딱에 등록한 내 번호와 같아야 사장님 화면에 내 이름이 바로 나와요. 사장님 외에는 보이지 않아요.<br>사장님이 아직 나를 직원으로 등록하기 전이면 사장님 달력·명세서는 등록한 뒤부터 와요.</div>
        <button class="btn block" style="margin-top:10px;" data-act="syncJoin">연결하기</button>
        <div class="hint">초대코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요.</div>`
     : `<div class="li" style="cursor:default;"><div><div class="nm">${esc(c.orgName||'팀')} <span class="dot-ok small">연결됨</span></div>
@@ -4081,7 +4089,7 @@ function vSyncCard(){
       <input type="text" id="sy_code" placeholder="예: AB12CD" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;">
       <label style="margin-top:8px;display:block;">내 전화번호</label>
       <div class="row"><input type="tel" id="sy_phone" placeholder="010-1234-5678" inputmode="tel" value="${esc(fmtPhone(c.phone||''))}"><button class="btn" style="flex:0 0 auto;" data-act="syncJoin">연결</button></div>
-      <div class="hint">코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요. 전화번호는 사장님이 등록한 내 번호와 같아야 해요.</div>
+      <div class="hint">코드는 사장님 급여뚝딱 앱 &gt; 관리 &gt; <b>팀 연동</b>에 있어요. 전화번호는 사장님이 등록한 내 번호와 같아야 해요. 사장님이 나를 등록하기 전이면 사장님 달력·명세서는 등록한 뒤부터 와요.</div>
       <div class="hint">폰을 바꿨거나 토스·안드로이드 앱을 오갔다면 예전 연결은 이어지지 않아요. 사장님께 초대코드를 다시 받아 넣어주세요.</div>
       <button class="btn danger block sm" style="margin-top:12px;" data-act="syncDeleteAccount">계정 삭제</button></div>`;
   const n=SYNC.queue.length;
