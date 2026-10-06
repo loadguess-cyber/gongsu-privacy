@@ -1,0 +1,94 @@
+<!doctype html>
+<!--
+  계정 삭제 안내 페이지.
+  Play 는 계정을 만들 수 있는 앱에 **앱 안 삭제 + 웹에서 접근 가능한 URL** 둘 다를 요구한다.
+  로그인 없이 열려야 하고, 무엇이 지워지는지 적혀 있어야 한다.
+  Play Console > 앱 콘텐츠 > 데이터 안전 > '계정 삭제 요청 URL' 에 이 주소를 넣는다.
+
+  ★ index-sync.html 과 같이 배포한다 (연동을 켜는 날). 자세한 순서는 README.md 참고.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공수뚝딱 계정 삭제</title>
+<style>
+  :root{color-scheme:light;}
+  *{box-sizing:border-box;}
+  body{margin:0;padding:28px 20px 64px;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+       color:#191F28;background:#fff;max-width:680px;margin-inline:auto;word-break:keep-all;}
+  h1{font-size:26px;line-height:1.35;margin:0 0 6px;}
+  h2{font-size:19px;margin:32px 0 10px;padding-top:18px;border-top:1px solid #E5E8EB;}
+  p,li{color:#333D4B;}
+  ol,ul{padding-left:22px;} li{margin:7px 0;}
+  .box{background:#F2F4F6;border-radius:12px;padding:16px 18px;margin:18px 0;}
+  .box b{color:#191F28;}
+  .warn{background:#FDEDEE;color:#B3262F;}
+  .warn b{color:#B3262F;}
+  a{color:#3182F6;}
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid #E5E8EB;color:#8B95A1;font-size:14px;}
+</style>
+</head>
+<body>
+
+<h1>공수뚝딱 계정 삭제</h1>
+<p>공수뚝딱은 <b>'사장님과 연결'을 켠 경우에만</b> 계정이 만들어집니다.
+혼자 기록만 하셨다면 계정이 없으며, 앱을 삭제하면 모든 데이터가 함께 사라집니다.</p>
+
+<h2>앱에서 직접 삭제하기 (권장)</h2>
+<ol>
+  <li>공수뚝딱 앱을 엽니다</li>
+  <li>아래쪽 <b>설정</b> 탭 → <b>사장님과 연결</b> 카드로 이동합니다</li>
+  <li>맨 아래 <b>계정 삭제</b>를 누릅니다</li>
+  <li>안내를 확인하고 두 번 확인하면 즉시 삭제됩니다</li>
+</ol>
+
+<h2>무엇이 지워지나요</h2>
+
+<div class="box">
+  <b>서버에서 즉시 삭제되는 것</b>
+  <ul>
+    <li>카카오 로그인 계정 정보(회원번호·닉네임)</li>
+    <li>내 소속 정보 — 사장님 화면의 팀원 목록에서 사라집니다</li>
+    <li>내가 보낸 출결 신고 전부 — 사장님 화면에서도 사라집니다</li>
+  </ul>
+</div>
+
+<div class="box">
+  <b>지워지지 않는 것</b>
+  <ul>
+    <li><b>휴대전화 안에 저장된 내 공수·급여 기록</b> — 내 임금의 근거가 되는 기록이라
+        앱이 임의로 지우지 않습니다. 직접 지우시려면 앱을 삭제하거나
+        기기 설정에서 앱 데이터를 삭제하세요.</li>
+    <li>이미 내보낸 급여명세서 PDF·백업 파일 — 기기나 보내신 곳에 남아 있습니다</li>
+  </ul>
+</div>
+
+<p class="box warn">계정 삭제는 <b>되돌릴 수 없습니다.</b>
+사장님과 다시 일하시게 되면 초대코드로 새로 연결하셔야 합니다.</p>
+
+<h2>일부만 지우고 싶다면</h2>
+<ul>
+  <li><b>특정 날짜 기록만</b> — 달력에서 그 날짜를 눌러 기록을 지우면
+      서버에서도 즉시 삭제됩니다. 계정은 그대로 유지됩니다.</li>
+  <li><b>연결만 끊기</b> — 설정 &gt; 사장님과 연결 &gt; <b>연결 끊기</b>.
+      소속 정보는 지워지지만, 이미 보낸 출결 신고는 임금 지급 근거가 되는 근로 기록이라
+      사장님 팀 기록으로 남습니다. 이것까지 지우려면 <b>계정 삭제</b>를 이용하세요.</li>
+</ul>
+
+<h2>앱을 쓸 수 없는 경우</h2>
+<p>휴대전화를 분실했거나 앱을 이미 삭제하신 경우
+<a href="mailto:loadguess@gmail.com?subject=%EA%B3%B5%EC%88%98%EB%9A%9D%EB%94%B1%20%EA%B3%84%EC%A0%95%20%EC%82%AD%EC%A0%9C%20%EC%9A%94%EC%B2%AD">loadguess@gmail.com</a> 으로
+<b>카카오 닉네임</b>과 <b>소속 팀 이름</b>을 알려주시면 본인 확인 후 처리해 드립니다.
+접수 후 <b>10일 이내</b>에 삭제하고 회신드립니다.</p>
+
+<h2>보관 기간</h2>
+<p>삭제 요청이 처리되면 서버에서 지체 없이 삭제되며 별도로 보관하지 않습니다.
+접속 기록은 서버 운영 목적으로 최대 3개월 보관 후 삭제됩니다.</p>
+
+<footer>
+  <a href="/">← 개인정보처리방침</a>
+</footer>
+
+</body>
+</html>
